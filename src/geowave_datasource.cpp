@@ -236,7 +236,6 @@ int geowave_datasource::create_jvm()
     {
         StaticVmLoader loader(JNI_VERSION_1_2);
 
-        std::string jaceClasspath = TOSTRING(GEOWAVE_JACE_RUNTIME_JAR);
         std::string geowaveClasspath = TOSTRING(GEOWAVE_RUNTIME_JAR);
 
         OptionList options;

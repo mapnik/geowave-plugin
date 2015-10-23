@@ -20,6 +20,7 @@
       # geowave
       'geowave_includes%': '<(geowave_home)/include',
       'geowave_libs%': '<(geowave_home)/lib',
+      'geowave_runtime_jar%': '<(geowave_home)/bin/geowave-jace.jar',
 
       # java
       # For whatever reason, java_home is not in scope for the conditions
@@ -65,6 +66,13 @@
             'src/geowave_featureset.cpp',
             'src/geowave_datasource.cpp'
          ],
+         'cflags': [
+            '-fPIC',
+            '<!@(<(mapnik_config) --cxxflags)'
+         ],
+         'ldflags': [
+            '<!@(<(mapnik_config) --ldflags)'
+         ],
          'link_settings': {
             'libraries': [
                '-l<(mapnik_name)',
@@ -79,7 +87,19 @@
                '<(java_jvm_lib)',
                '<(boost_libs)'
             ]
-         }
+         },
+         'defines': [
+            'GEOWAVE_RUNTIME_JAR=<(geowave_runtime_jar)'
+         ],
+         'actions': [
+            {
+               # This is a bit of a hack to setup the plugin install path for the makefile
+               'action_name': 'set_plugin_install_path',
+               'inputs': ['<(mapnik_config)'],
+               'outputs': ['<(PRODUCT_DIR)/../.plugin_install_path'],
+               'action': ['eval', 'echo <!(<@(_inputs) --input-plugins) > <@(_outputs)']
+            }
+         ]
       }
    ]
 }
