@@ -18,6 +18,9 @@
 #include <string>
 
 // GeoWave
+#include "jace/proxy/java/lang/String.h"
+using jace::proxy::java::lang::String;
+
 #include "jace/proxy/org/opengis/filter/Filter.h"
 using jace::proxy::org::opengis::filter::Filter;
 
@@ -41,6 +44,7 @@ public:
 
 private:
     void init(mapnik::parameters const& params);
+    bool parse_auths();
     int create_jvm();
     bool init_extent();
     void init_layer_descriptor();
@@ -54,6 +58,8 @@ private:
     std::string username_;
     std::string password_;
     std::string table_namespace_;
+    std::string auths_string_;
+    std::vector<String> auths_;
     std::string adapter_id_;
     std::string cql_filter_;
     mapnik::datasource_geometry_t geometry_type_;

@@ -40,12 +40,39 @@ function install() {
     fi
 }
 
+function build() {
+    MASON_PLATFORM_ID=$(mason env MASON_PLATFORM_ID)
+    if [[ ! -d ./mason_packages/${MASON_PLATFORM_ID}/${1}/${2} ]]; then
+        mason build $1 $2
+        mason link $1 $2
+        if [[ $3 ]]; then
+            LA_FILE=$(${MASON_DIR:-~/.mason}/mason prefix $1 $2)/lib/$3.la
+            if [[ -f ${LA_FILE} ]]; then
+               perl -i -p -e "s/${FIND_PATTERN}/${REPLACE}/g;" ${LA_FILE}
+            else
+                echo "$LA_FILE not found"
+            fi
+        fi
+    fi
+}
+
+function build_mapnik() {
+    git clone https://github.com/mapnik/mapnik.git mapnik
+    cd mapnik
+    git checkout tags/v3.0.8
+    ./bootstrap.sh
+    ./configure PREFIX=${MASON_LINKED_ABS} PATH_REMOVE='/usr' RUNTIME_LINK='static'
+    make install
+    cd ..
+
+    # link to mapnik deps
+    cp -a $(pwd)/mapnik/mason_packages/. $(pwd)/mason_packages
+}
+
+# boost libraries are included through mapnik
 function install_mason_deps() {
-    install mapnik 3.0.0 &
-    install boost 1.57.0 &
-    install boost_libsystem 1.57.0 &
-    install boost_libthread 1.57.0 &
     install geowave-jace 0.8.7 &
+    install gtest 1.7.0 &
     wait
 }
 
@@ -54,6 +81,8 @@ MASON_LINKED_REL=./mason_packages/.link
 export C_INCLUDE_PATH="${MASON_LINKED_ABS}/include"
 export CPLUS_INCLUDE_PATH="${MASON_LINKED_ABS}/include"
 export LIBRARY_PATH="${MASON_LINKED_ABS}/lib"
+export GEOWAVE_RUNTIME_JAR=${MASON_LINKED_ABS}/bin/geowave-jace.jar
+export GEOWAVE_INGEST_JAR=${MASON_LINKED_ABS}/bin/geowave-ingest.jar
 
 function make_config() {
     if [[ $(uname -s) == 'Darwin' ]]; then
@@ -64,16 +93,18 @@ function make_config() {
 
     echo "{
    'variables': {
-      'boost_home': '${MASON_LINKED_REL}',
-      'geowave_home': '${MASON_LINKED_REL}',
+      'boost_home': '${MASON_LINKED_ABS}',
+      'geowave_home': '${MASON_LINKED_ABS}',
       'java_home': '${JAVA_HOME}',
-      'mapnik_config': '${MASON_LINKED_REL}/bin/mapnik-config'
+      'mapnik_config': '${MASON_LINKED_ABS}/bin/mapnik-config',
+      'gtest_home': '${MASON_LINKED_ABS}'
    }
 }" > ./config.gypi
 }
 
 function main() {
     setup_mason
+    build_mapnik
     install_mason_deps
     make_config
     echo "Ready, now run:"

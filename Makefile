@@ -30,4 +30,7 @@ INSTALL_PATH=$(shell cat ./build/out/.plugin_install_path)
 install: all
 	cp ./build/out/${BUILDTYPE}/lib.target/geowave.input ${INSTALL_PATH}
 
-.PHONY: clean install
+test: all
+	./build/out/${BUILDTYPE}/geowave-plugin-test ./build/out/${BUILDTYPE}/lib.target/geowave.input
+
+.PHONY: clean install test

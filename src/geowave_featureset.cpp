@@ -232,7 +232,7 @@ mapnik::feature_ptr geowave_featureset::next()
                 {
                     float value = java_cast<Float>(attrib).floatValue();
                     feature->put(name, 
-                                 (double)value);
+                                 value);
                 }
                 else if (instanceof<Integer>(attrib))
                 {

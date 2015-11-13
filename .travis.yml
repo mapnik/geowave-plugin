@@ -1,0 +1,42 @@
+language: cpp
+
+sudo: false
+
+git:
+  depth: 1
+  submodules: true
+
+env:
+  global:
+   - JAVA_HOME=/usr/lib/jvm/java-7-oracle
+   - LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${JAVA_HOME}/jre/lib/amd64/server:${TRAVIS_BUILD_DIR}/mason_packages/.link/lib
+
+addons:
+  apt:
+    sources:
+     - ubuntu-toolchain-r-test
+     - llvm-toolchain-precise-3.5
+    packages:
+     - clang-3.5
+
+cache: ccache
+
+matrix:
+  include:
+    - os: linux
+      compiler: clang
+      env: JOBS=4
+
+install:
+  - if [[ $(uname -s) == 'Linux' ]]; then
+      export CXX="ccache clang++-3.5 -Qunused-arguments";
+      export CC="ccache clang-3.5 -Qunused-arguments";
+    fi
+
+script:
+ - source bootstrap.sh
+ - make
+ - ./test/geowave geowave_start
+ - ./test/geowave geowave_ingest
+ - make test
+ - ./test/geowave geowave_stop

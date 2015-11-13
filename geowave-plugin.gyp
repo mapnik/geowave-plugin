@@ -34,6 +34,10 @@
       'mapnik_includes%': '<!(<(mapnik_config) --includes | sed -e "s/-I//g")',
       'mapnik_libs%': '<!(<(mapnik_config) --libs | sed -e "s/-L//g;s/\s.*$//g")',
       'mapnik_name%': '<!(<(mapnik_config) --libs | sed -e "s/.*\s//g;s/-l//g")',
+
+      # google test
+      'gtest_includes%': '<(gtest_home)/include',
+      'gtest_libs%': '<(gtest_home)/lib'
    },
    "conditions": [
       ["OS=='win'", {
@@ -100,6 +104,34 @@
                'action': ['eval', 'echo <!(<@(_inputs) --input-plugins) > <@(_outputs)']
             }
          ]
+      },
+      {
+         'target_name': 'geowave-plugin-test',
+         'type': 'executable',
+         'include_dirs': [
+            '<@(mapnik_includes)',
+            '<(gtest_includes)'
+         ],
+         'sources': [
+            './test/test.cpp'
+         ],
+         'cflags': [
+            '-std=c++11'
+         ],
+         'link_settings': {
+            'libraries': [
+               '-l<(mapnik_name)',
+               '-ljvm',
+               '-lgtest',
+               '-lm',
+               '-lpthread'
+            ],
+            'library_dirs': [
+               '<(mapnik_libs)',
+               '<(java_jvm_lib)',
+               '<(gtest_libs)'
+            ]
+         }
       }
    ]
 }

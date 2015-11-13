@@ -4,6 +4,7 @@
 
 // mapnik
 #include <mapnik/debug.hpp>
+#include <mapnik/csv/csv_grammar.hpp>
 
 // jace
 #include <jace/Jace.h>
@@ -143,6 +144,11 @@ using jace::proxy::mil::nga::giat::geowave::adapter::vector::stats::FeatureBound
 #define STRINGIFY(x) #x
 #define TOSTRING(x) STRINGIFY(x)
 
+namespace csv_utils {
+    const mapnik::csv_line_grammar<char const*> line_g;
+    const mapnik::csv_white_space_skipper<char const*> skipper;
+}
+
 using mapnik::datasource;
 using mapnik::parameters;
 
@@ -158,6 +164,7 @@ geowave_datasource::geowave_datasource(parameters const& params)
        username_(*params.get<std::string>("username", "")),
        password_(*params.get<std::string>("password", "")),
        table_namespace_(*params.get<std::string>("table_namespace", "")),
+       auths_string_(*params.get<std::string>("auths", "")),
        adapter_id_(*params.get<std::string>("adapter_id", "")),
        cql_filter_(*params.get<std::string>("cql_filter", ""))
 {
@@ -218,6 +225,10 @@ void geowave_datasource::init(parameters const& params)
 
     feature_data_adapter_ = java_cast<FeatureDataAdapter>(data_adapter);
 
+    // parse the user supplied authorizations
+    if (!parse_auths())
+        MAPNIK_LOG_DEBUG(geowave) << "Failed to parse auths from CSV line:\n" + auths_string_;
+
     // determine the extent of the data    
     if (!init_extent())
         MAPNIK_LOG_DEBUG(geowave) << "GeoWave Plugin: There was a problem determining the extent. ";
@@ -228,6 +239,29 @@ void geowave_datasource::init(parameters const& params)
     // determine the geometry type
     if (!init_geometry_type())
         MAPNIK_LOG_DEBUG(geowave) << "GeoWave Plugin: There was a problem determining the geometry type. ";
+}
+
+bool geowave_datasource::parse_auths()
+{
+    bool success = true;
+    if (!auths_string_.empty())
+    {
+        mapnik::csv_line values;
+        auto start = auths_string_.c_str();
+        auto end = start + auths_string_.length();
+        if (!boost::spirit::qi::phrase_parse(start, end, (csv_utils::line_g)(',', '"'), csv_utils::skipper, values))
+        {
+            auths_.clear();
+            auths_.push_back("");
+            success = false;
+        } else {
+            for (auto const& value : values)
+            {
+                auths_.push_back(value);
+            }
+        }
+    }
+    return success;
 }
 
 int geowave_datasource::create_jvm()
@@ -275,7 +309,7 @@ bool geowave_datasource::init_extent()
     FeatureBoundingBoxStatistics bbox_stats = java_cast<FeatureBoundingBoxStatistics>(accumulo_statstore.getDataStatistics(
         java_new<ByteArrayId>(adapter_id_),
         FeatureBoundingBoxStatistics::composeId(feature_data_adapter_.getType().getGeometryDescriptor().getLocalName()),
-        JArray<String>(0)));
+        JArray<String>(auths_)));
 
     // pull bounds from table statistics
     Geometry stats_extent;
@@ -365,8 +399,9 @@ void geowave_datasource::init_layer_descriptor()
                  env->IsAssignableFrom(attrib_class.getClass(), Long::staticGetJavaJniClass().getClass()) || 
                  env->IsAssignableFrom(attrib_class.getClass(), Short::staticGetJavaJniClass().getClass()))
             desc_.add_descriptor(mapnik::attribute_descriptor(name, mapnik::Integer));
-        else if (env->IsAssignableFrom(attrib_class.getClass(), Double::staticGetJavaJniClass().getClass()) || 
-                 env->IsAssignableFrom(attrib_class.getClass(), Float::staticGetJavaJniClass().getClass()))
+        else if (env->IsAssignableFrom(attrib_class.getClass(), Float::staticGetJavaJniClass().getClass()))
+            desc_.add_descriptor(mapnik::attribute_descriptor(name, mapnik::Float));
+        else if (env->IsAssignableFrom(attrib_class.getClass(), Double::staticGetJavaJniClass().getClass()))
             desc_.add_descriptor(mapnik::attribute_descriptor(name, mapnik::Double));
         else if (env->IsAssignableFrom(attrib_class.getClass(), String::staticGetJavaJniClass().getClass()) || 
                  env->IsAssignableFrom(attrib_class.getClass(), Date::staticGetJavaJniClass().getClass()))
@@ -453,7 +488,7 @@ mapnik::featureset_ptr geowave_datasource::features(mapnik::query const& q) cons
                                                                            java_new<SpatialQuery>(factory.createPolygon(coordArray)),
                                                                            filter_,
                                                                            Integer(0),
-                                                                           JArray<String>(0)),
+                                                                           JArray<String>(auths_)),
                                                     desc_.get_encoding(),
                                                     ctx_);
     }
@@ -491,7 +526,7 @@ mapnik::featureset_ptr geowave_datasource::features_at_point(mapnik::coord2d con
                                                                            java_new<SpatialQuery>(factory.createPolygon(coordArray)),
                                                                            filter_,
                                                                            Integer(0),
-                                                                           JArray<String>(0)),
+                                                                           JArray<String>(auths_)),
                                                     desc_.get_encoding(),
                                                     ctx_);
     }
