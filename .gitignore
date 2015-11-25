@@ -26,3 +26,9 @@
 *.exe
 *.out
 *.app
+
+build
+deps
+.mason
+config.gypi
+mason_packages
