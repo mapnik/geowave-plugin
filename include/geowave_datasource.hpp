@@ -49,6 +49,7 @@ private:
     bool init_extent();
     void init_layer_descriptor();
     bool init_geometry_type();
+    mapnik::featureset_ptr query(mapnik::box2d<double> const& box) const;
     
     mapnik::layer_descriptor desc_;
     mapnik::context_ptr ctx_;

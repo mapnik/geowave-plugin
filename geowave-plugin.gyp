@@ -20,7 +20,7 @@
       # geowave
       'geowave_includes%': '<(geowave_home)/include',
       'geowave_libs%': '<(geowave_home)/lib',
-      'geowave_runtime_jar%': '<(geowave_home)/bin/geowave-jace.jar',
+      'geowave_runtime_jar%': '<(geowave_home)/bin/geowave-runtime.jar',
 
       # java
       # For whatever reason, java_home is not in scope for the conditions
@@ -80,7 +80,7 @@
          'link_settings': {
             'libraries': [
                '-l<(mapnik_name)',
-               '-ljace',
+               '-lgeowave',
                '-ljvm',
                '-lboost_thread',
                '-lboost_system'

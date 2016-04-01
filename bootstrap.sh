@@ -71,7 +71,7 @@ function build_mapnik() {
 
 # boost libraries are included through mapnik
 function install_mason_deps() {
-    install geowave-jace 0.8.7 &
+    install geowave-jace 0.9.1 &
     install gtest 1.7.0 &
     wait
 }
@@ -81,8 +81,10 @@ MASON_LINKED_REL=./mason_packages/.link
 export C_INCLUDE_PATH="${MASON_LINKED_ABS}/include"
 export CPLUS_INCLUDE_PATH="${MASON_LINKED_ABS}/include"
 export LIBRARY_PATH="${MASON_LINKED_ABS}/lib"
-export GEOWAVE_RUNTIME_JAR=${MASON_LINKED_ABS}/bin/geowave-jace.jar
-export GEOWAVE_INGEST_JAR=${MASON_LINKED_ABS}/bin/geowave-ingest.jar
+export GEOWAVE_EXAMPLE_JAR=${MASON_LINKED_ABS}/bin/geowave-example.jar
+export GEOWAVE_FORMAT_VECTOR_JAR=${MASON_LINKED_ABS}/bin/geowave-format-vector.jar
+export GEOWAVE_RUNTIME_JAR=${MASON_LINKED_ABS}/bin/geowave-runtime.jar
+export GEOWAVE_TOOLS_JAR=${MASON_LINKED_ABS}/bin/geowave-tools.jar
 
 function make_config() {
     if [[ $(uname -s) == 'Darwin' ]]; then

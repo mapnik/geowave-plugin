@@ -3,7 +3,7 @@
 cd "$( dirname "${BASH_SOURCE[0]}" )"
 cd ../
 
-CLASS_TO_RUN=mil.nga.giat.geowave.datastore.accumulo.app.GeoWaveDemoApp
+GEOWAVE_DEMO_APP=mil.nga.giat.geowave.examples.accumulo.app.GeoWaveDemoApp
 GEOWAVE_CLI_MAIN=mil.nga.giat.geowave.core.cli.GeoWaveMain
 PID_PATH_NAME=$(pwd)/test/.geowave-pid
 
@@ -20,7 +20,7 @@ SHAPEFILE=$(pwd)/test/data/shp/world_merc.shp
 geowave_start() {
   if [ ! -f $PID_PATH_NAME ]; then
     echo "Starting GeoWave ..."
-    nohup java -Dinteractive=false -cp $GEOWAVE_RUNTIME_JAR $CLASS_TO_RUN /tmp 2>> /dev/null >> /dev/null &
+    nohup java -Dinteractive=false -cp $GEOWAVE_EXAMPLE_JAR:$GEOWAVE_FORMAT_VECTOR_JAR:$GEOWAVE_RUNTIME_JAR:$GEOWAVE_TOOLS_JAR $GEOWAVE_DEMO_APP /tmp 2>> /dev/null >> /dev/null &
     echo $! > $PID_PATH_NAME
     sleep 5
     echo "GeoWave started ..."
@@ -31,7 +31,7 @@ geowave_start() {
 
 geowave_ingest() {
   if [ -f $PID_PATH_NAME ]; then
-    java -cp $GEOWAVE_INGEST_JAR $GEOWAVE_CLI_MAIN -localingest -z $ZOOKEEPER_URL -u $USERNAME -p $PASSWORD -i $INSTANCE_NAME -n $TABLE_NAMESPACE -f $ADAPTER_TYPE -b $SHAPEFILE
+    java -cp $GEOWAVE_EXAMPLE_JAR:$GEOWAVE_FORMAT_VECTOR_JAR:$GEOWAVE_RUNTIME_JAR:$GEOWAVE_TOOLS_JAR $GEOWAVE_CLI_MAIN -localingest -connectionParams "\"zookeeper=$ZOOKEEPER_URL;user=$USERNAME;password=$PASSWORD;instance=$INSTANCE_NAME\"" -gwNamespace $TABLE_NAMESPACE -f $ADAPTER_TYPE -b $SHAPEFILE
   else
     echo "GeoWave is not running ..."
   fi

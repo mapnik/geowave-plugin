@@ -101,17 +101,30 @@ TEST(geowave_plugin, features_at_point)
 
    feature_ptr feature = fs->next();
 
-   EXPECT_EQ(feature->get("FIPS").to_string(), "US");
-   EXPECT_EQ(feature->get("ISO2").to_string(), "US");
-   EXPECT_EQ(feature->get("ISO3").to_string(), "USA");
-   EXPECT_EQ(feature->get("UN").to_int(), 840);
-   EXPECT_EQ(feature->get("NAME").to_string(), "United States");
-   EXPECT_EQ(feature->get("AREA").to_int(), 915896);
-   EXPECT_EQ(feature->get("POP2005").to_int(), 299846449);
-   EXPECT_EQ(feature->get("REGION").to_int(), 19);
-   EXPECT_EQ(feature->get("SUBREGION").to_int(), 21);
-   EXPECT_EQ(feature->get("LON").to_double(), -98.606000);
-   EXPECT_EQ(feature->get("LAT").to_double(), 39.622000);
+   int count = 0;
+   bool found = false;
+   while (feature){
+      count++;
+
+      if (feature->get("UN").to_int() == 840){
+         found = true;
+         EXPECT_EQ(feature->get("FIPS").to_string(), "US");
+         EXPECT_EQ(feature->get("ISO2").to_string(), "US");
+         EXPECT_EQ(feature->get("ISO3").to_string(), "USA");
+         EXPECT_EQ(feature->get("UN").to_int(), 840);
+         EXPECT_EQ(feature->get("NAME").to_string(), "United States");
+         EXPECT_EQ(feature->get("AREA").to_int(), 915896);
+         EXPECT_EQ(feature->get("POP2005").to_int(), 299846449);
+         EXPECT_EQ(feature->get("REGION").to_int(), 19);
+         EXPECT_EQ(feature->get("SUBREGION").to_int(), 21);
+         EXPECT_EQ(feature->get("LON").to_double(), -98.606000);
+         EXPECT_EQ(feature->get("LAT").to_double(), 39.622000);
+      }
+      feature = fs->next();
+   }
+
+   EXPECT_EQ(count, 6);
+   EXPECT_EQ(found, true);
 }
 
 TEST(geowave_plugin, cql_query_filter)
@@ -139,17 +152,30 @@ TEST(geowave_plugin, cql_query_filter)
 
    feature_ptr feature = fs->next();
 
-   EXPECT_EQ(feature->get("FIPS").to_string(), "EI");
-   EXPECT_EQ(feature->get("ISO2").to_string(), "IE");
-   EXPECT_EQ(feature->get("ISO3").to_string(), "IRL");
-   EXPECT_EQ(feature->get("UN").to_int(), 372);
-   EXPECT_EQ(feature->get("NAME").to_string(), "Ireland");
-   EXPECT_EQ(feature->get("AREA").to_int(), 6889);
-   EXPECT_EQ(feature->get("POP2005").to_int(), 4143294);
-   EXPECT_EQ(feature->get("REGION").to_int(), 150);
-   EXPECT_EQ(feature->get("SUBREGION").to_int(), 154);
-   EXPECT_EQ(feature->get("LON").to_double(), -8.152000);
-   EXPECT_EQ(feature->get("LAT").to_double(), 53.177000);
+   int count = 0;
+   bool found = false;
+   while (feature){
+      count++;
+
+      if (feature->get("UN").to_int() == 372){
+         found = true;
+         EXPECT_EQ(feature->get("FIPS").to_string(), "EI");
+         EXPECT_EQ(feature->get("ISO2").to_string(), "IE");
+         EXPECT_EQ(feature->get("ISO3").to_string(), "IRL");
+         EXPECT_EQ(feature->get("UN").to_int(), 372);
+         EXPECT_EQ(feature->get("NAME").to_string(), "Ireland");
+         EXPECT_EQ(feature->get("AREA").to_int(), 6889);
+         EXPECT_EQ(feature->get("POP2005").to_int(), 4143294);
+         EXPECT_EQ(feature->get("REGION").to_int(), 150);
+         EXPECT_EQ(feature->get("SUBREGION").to_int(), 154);
+         EXPECT_EQ(feature->get("LON").to_double(), -8.152000);
+         EXPECT_EQ(feature->get("LAT").to_double(), 53.177000);
+      }
+      feature = fs->next();
+   }
+
+   EXPECT_EQ(count, 1);
+   EXPECT_EQ(found, true);
 }
 
 TEST(geowave_plugin, fields_and_types)

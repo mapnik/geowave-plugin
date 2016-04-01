@@ -118,14 +118,16 @@ using jace::proxy::mil::nga::giat::geowave::core::index::ByteArrayId;
 using jace::proxy::mil::nga::giat::geowave::core::geotime::GeometryUtils;
 #include "jace/proxy/mil/nga/giat/geowave/core/store/adapter/DataAdapter.h"
 using jace::proxy::mil::nga::giat::geowave::core::store::adapter::DataAdapter;
-#include "jace/proxy/mil/nga/giat/geowave/core/store/adapter/statistics/StatisticalDataAdapter.h"
-using jace::proxy::mil::nga::giat::geowave::core::store::adapter::statistics::StatisticalDataAdapter;
 #include "jace/proxy/mil/nga/giat/geowave/core/store/index/Index.h"
 using jace::proxy::mil::nga::giat::geowave::core::store::index::Index;
-#include "jace/proxy/mil/nga/giat/geowave/core/geotime/IndexType_JaceIndexType.h"
-using jace::proxy::mil::nga::giat::geowave::core::geotime::IndexType_JaceIndexType;
+#include "jace/proxy/mil/nga/giat/geowave/core/store/index/PrimaryIndex.h"
+using jace::proxy::mil::nga::giat::geowave::core::store::index::PrimaryIndex;
+#include "jace/proxy/mil/nga/giat/geowave/core/geotime/ingest/SpatialDimensionalityTypeProvider.h"
+using jace::proxy::mil::nga::giat::geowave::core::geotime::ingest::SpatialDimensionalityTypeProvider;
 #include "jace/proxy/mil/nga/giat/geowave/core/store/query/Query.h"
 using jace::proxy::mil::nga::giat::geowave::core::store::query::Query;
+#include "jace/proxy/mil/nga/giat/geowave/core/store/query/QueryOptions.h"
+using jace::proxy::mil::nga::giat::geowave::core::store::query::QueryOptions;
 #include "jace/proxy/mil/nga/giat/geowave/core/geotime/store/query/SpatialQuery.h"
 using jace::proxy::mil::nga::giat::geowave::core::geotime::store::query::SpatialQuery;
 
@@ -134,8 +136,10 @@ using jace::proxy::mil::nga::giat::geowave::core::store::adapter::statistics::Da
 #include "jace/proxy/mil/nga/giat/geowave/core/geotime/store/statistics/BoundingBoxDataStatistics.h"
 using jace::proxy::mil::nga::giat::geowave::core::geotime::store::statistics::BoundingBoxDataStatistics;
 
-#include "jace/proxy/mil/nga/giat/geowave/adapter/vector/VectorDataStore.h"
-using jace::proxy::mil::nga::giat::geowave::adapter::vector::VectorDataStore;
+#include "jace/proxy/mil/nga/giat/geowave/adapter/vector/GeotoolsFeatureDataAdapter.h"
+using jace::proxy::mil::nga::giat::geowave::adapter::vector::GeotoolsFeatureDataAdapter;
+#include "jace/proxy/mil/nga/giat/geowave/adapter/vector/query/cql/CQLQuery.h"
+using jace::proxy::mil::nga::giat::geowave::adapter::vector::query::cql::CQLQuery;
 #include "jace/proxy/mil/nga/giat/geowave/adapter/vector/plugin/ExtractGeometryFilterVisitor.h"
 using jace::proxy::mil::nga::giat::geowave::adapter::vector::plugin::ExtractGeometryFilterVisitor;
 #include "jace/proxy/mil/nga/giat/geowave/adapter/vector/stats/FeatureBoundingBoxStatistics.h"
@@ -464,37 +468,7 @@ mapnik::featureset_ptr geowave_datasource::features(mapnik::query const& q) cons
 {
     // if the query box intersects our world extent then query for features
     mapnik::box2d<double> const& box = q.get_bbox();
-    if (extent_.intersects(box))
-    {
-        GeometryFactory factory = java_new<GeometryFactory>();
-
-        JDouble lonMin = box.minx();
-        JDouble lonMax = box.maxx();
-        JDouble latMin = box.miny();
-        JDouble latMax = box.maxy();
-
-        JArray<Coordinate> coordArray(5);
-        coordArray[0] = java_new<Coordinate>(lonMin, latMin);
-        coordArray[1] = java_new<Coordinate>(lonMax, latMin);
-        coordArray[2] = java_new<Coordinate>(lonMax, latMax);
-        coordArray[3] = java_new<Coordinate>(lonMin, latMax);
-        coordArray[4] = java_new<Coordinate>(lonMin, latMin);
-
-        VectorDataStore vector_datastore = java_new<VectorDataStore>(
-            accumulo_operations_);
-
-        return std::make_shared<geowave_featureset>(vector_datastore.query(feature_data_adapter_,
-                                                                           IndexType_JaceIndexType::createSpatialVectorIndex(),
-                                                                           java_new<SpatialQuery>(factory.createPolygon(coordArray)),
-                                                                           filter_,
-                                                                           Integer(0),
-                                                                           JArray<String>(auths_)),
-                                                    desc_.get_encoding(),
-                                                    ctx_);
-    }
-
-    // otherwise return an empty featureset pointer
-    return mapnik::featureset_ptr();
+    return geowave_datasource::query(box);
 }
 
 mapnik::featureset_ptr geowave_datasource::features_at_point(mapnik::coord2d const& pt, double tol) const
@@ -502,6 +476,11 @@ mapnik::featureset_ptr geowave_datasource::features_at_point(mapnik::coord2d con
     // if the query box intersects our world extent then query for features
     mapnik::box2d<double> box(pt, pt);
     box.pad(tol);
+    return geowave_datasource::query(box);
+}
+
+mapnik::featureset_ptr geowave_datasource::query(mapnik::box2d<double> const& box) const
+{
     if (extent_.intersects(box))
     {
         GeometryFactory factory = java_new<GeometryFactory>();
@@ -518,15 +497,22 @@ mapnik::featureset_ptr geowave_datasource::features_at_point(mapnik::coord2d con
         coordArray[3] = java_new<Coordinate>(lonMin, latMax);
         coordArray[4] = java_new<Coordinate>(lonMin, latMin);
 
-        VectorDataStore vector_datastore = java_new<VectorDataStore>(
+        AccumuloDataStore accumulo_datastore = java_new<AccumuloDataStore>(
             accumulo_operations_);
-        
-        return std::make_shared<geowave_featureset>(vector_datastore.query(feature_data_adapter_,
-                                                                           IndexType_JaceIndexType::createSpatialVectorIndex(), 
-                                                                           java_new<SpatialQuery>(factory.createPolygon(coordArray)),
-                                                                           filter_,
-                                                                           Integer(0),
-                                                                           JArray<String>(auths_)),
+
+        QueryOptions query_options = java_new<QueryOptions>(feature_data_adapter_,
+                                                            java_new<SpatialDimensionalityTypeProvider>().createPrimaryIndex());
+
+        query_options.setAuthorizations(JArray<String>(auths_));
+
+        SpatialQuery spatial_query = java_new<SpatialQuery>(factory.createPolygon(coordArray));
+
+        CQLQuery cql_query = java_new<CQLQuery>(spatial_query,
+                                                filter_,
+                                                feature_data_adapter_);
+
+        return std::make_shared<geowave_featureset>(accumulo_datastore.query(query_options,
+                                                                             cql_query),
                                                     desc_.get_encoding(),
                                                     ctx_);
     }

@@ -28,8 +28,8 @@ GeoWave Plugin is an open source input plugin for Mapnik.
  * jvm
     - >= JDK 7
  * geowave
-    - >= 0.8.7
-    - [source](http://s3.amazonaws.com/geowave-rpms/release/TARBALL/geowave-0.8.7-c8ef40c-jace-source.tar.gz)
+    - >= 0.9.1
+    - [source](http://s3.amazonaws.com/geowave-rpms/release/TARBALL/geowave-0.9.1-???-jace-source.tar.gz)
     - [docs](http://ngageoint.github.io/geowave/documentation.html#generate-proxies-and-build-from-source)
 
 ### Test Libraries
@@ -40,9 +40,15 @@ GeoWave Plugin is an open source input plugin for Mapnik.
  * Java Runtime Environment
     - >= 7
  * GeoWave Runtime Jar
-    - >= 0.8.7
- * GeoWave Ingest Jar
-    - >= 0.8.7
+    - >= 0.9.1
+ * GeoWave Example Jar
+    - >= 0.9.1
+    - Required for test
+ * GeoWave Format Vector Jar
+    - >= 0.9.1
+    - Required for test
+ * GeoWave Tools Jar
+    - >= 0.9.1
     - Required for test
 
 ## Configuration
@@ -95,11 +101,13 @@ For more details, or to build directly with GYP, check out the contents of the M
 
 First, download the GeoWave runtime and ingest jars contained within the jace-source packages provided by GeoWave [here](http://ngageoint.github.io/geowave/packages.html).  
 
-Next, create two environment variables which point to the runtime and ingest jars:
+Next, create four environment variables which point to the runtime and ingest jars:
 
 ```bash
+export GEOWAVE_EXAMPLE_JAR=/path/to/jar
+export GEOWAVE_FORMAT_VECTOR_JAR=/path/to/jar
 export GEOWAVE_RUNTIME_JAR=/path/to/jar
-export GEOWAVE_INGEST_JAR=/path/to/jar
+export GEOWAVE_TOOLS_JAR=/path/to/jar
 ```
 
 ### Running Tests
