@@ -4,7 +4,7 @@
 
 function setup_mason() {
     if [[ ! -d ./.mason ]]; then
-        git clone --depth 1 https://github.com/mapbox/mason.git ./.mason
+        git clone --depth 1 https://github.com/jwomeara/mason.git ./.mason
     else
         echo "Updating to latest mason"
         (cd ./.mason && git pull)
@@ -16,9 +16,9 @@ function setup_mason() {
 }
 
 if [[ $(uname -s) == 'Darwin' ]]; then
-    FIND_PATTERN="\/Users\/travis\/build\/mapbox\/mason"
+    FIND_PATTERN="\/Users\/travis\/build\/jwomeara\/mason"
 else
-    FIND_PATTERN="\/home\/travis\/build\/mapbox\/mason"
+    FIND_PATTERN="\/home\/travis\/build\/jwomeara\/mason"
 fi
 
 REPLACE="$(pwd)"
@@ -88,9 +88,9 @@ export GEOWAVE_TOOLS_JAR=${MASON_LINKED_ABS}/bin/geowave-tools.jar
 
 function make_config() {
     if [[ $(uname -s) == 'Darwin' ]]; then
-        local PATH_REPLACE="/Users/travis/build/mapbox/mason/mason_packages:./mason_packages"
+        local PATH_REPLACE="/Users/travis/build/jwomeara/mason/mason_packages:./mason_packages"
     else
-        local PATH_REPLACE="/home/travis/build/mapbox/mason/mason_packages:./mason_packages"
+        local PATH_REPLACE="/home/travis/build/jwomeara/mason/mason_packages:./mason_packages"
     fi
 
     echo "{
